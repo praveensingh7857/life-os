@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTask(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             (!('description' in data) || data.description is string) &&
+             data.priority in ['Urgent', 'High', 'Medium', 'Low'] &&
+             data.status in ['Todo', 'In Progress', 'Completed'] &&
+             (!('category' in data) || data.category is string) &&
+             (!('dueDate' in data) || data.dueDate is string);
+    }
+
+    function isValidReminder(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.time is string &&
+             data.date is string &&
+             data.isCompleted is bool;
+    }
+
+    function isValidMemory(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 5000 &&
+             data.isApproved is bool;
+    }
+
+    function isValidFinance(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             (data.amount is number) &&
+             data.type in ['Expense', 'Income'] &&
+             data.category is string;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+
+      match /tasks/{taskId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidTask(incoming());
+        allow update: if isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTask(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /reminders/{reminderId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidReminder(incoming());
+        allow update: if isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidReminder(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /memories/{memoryId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidMemory(incoming());
+        allow update: if isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidMemory(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /finances/{financeId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidFinance(incoming());
+        allow update: if isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidFinance(incoming());
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

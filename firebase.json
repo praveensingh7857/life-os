@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-android-lifeosai-3cf329b4-9b88-49cb-b30d-650705c871a2",
+      "rules": "firestore.rules"
+    }
+  ]
+}

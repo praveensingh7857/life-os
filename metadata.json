@@ -1,0 +1,6 @@
+{
+  "name": "LIFEOS AI",
+  "description": "Your Life. Organized by Intelligence. AI-powered personal operating system and executive command center.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
